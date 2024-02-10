@@ -1,0 +1,85 @@
+# Ansible playbook to onboard Cisco devices, it will prompt the user to provide information that will be used to set the commands sent to the devices
+# The playbook also adds default configuration to each device, in this case it is the SNMP server communities, ACL and some configuration hardening
+---
+- name: Onboarding Script
+  gather_facts: false
+  hosts: all
+
+  vars:
+    cli:
+      username: cisco
+      password: cisco123
+
+  vars_prompt:
+    - name: "primary_snmp_host"
+      prompt: "Enter the primary SNMP host IP address"
+      private: false
+    - name: "secondary_snmp_host"
+      prompt: "Enter the secondary SNMP host IP address (or enter none)"
+      private: false
+    - name: "ntp_primary"
+      prompt: "Enter the primary NTP Server IP address"
+      private: false
+    - name: "ntp_secondary"
+      prompt: "Enter the secondary NTP Server IP address (or enter none)"
+      private: false
+    - name: "timezone_offset"
+      prompt: "Enter the timezone offset (eg, BST+1)"
+      private: false
+    - name: "timezone"
+      prompt: "Enter the timezone (eg, GMT)"
+      private: false
+
+  tasks:
+  ##  CISCO IOS DEVICE TASKS
+    - name: Create Access-list for SNMP
+      cisco.ios.ios_config:
+        lines:
+          - ip access-list standard ACL_SNMP
+        after:
+          - permit {{ primary_snmp_host }}
+          - permit {{ secondary_snmp_host }}
+
+    - name: IOS SNMP config
+      cisco.ios.ios_config:
+        lines:
+          - snmp-server community labro ro
+          - snmp-server community labrw rw
+          - snmp-server host 192.168.174.5 version 2 public
+          - snmp-server group SNMP_GROUP v3 priv read labro write labro access ACL_SNMP
+        after:
+          - snmp-server user labro SNMP_GROUP v3 auth sha teabag priv aes 128 teabag access ACL_SNMP
+
+    - name: IOS device hardening config
+      cisco.ios.ios_config:
+        lines:
+          - service tcp-keepalives-in
+          - service tcp-keepalives-out
+          - service timestamps debug datetime msec localtime show-timezone year
+          - service timestamps log datetime msec localtime show-timezone year
+          - login block-for 5 attempts 3 within 10
+
+    - name: IOS logging config
+      cisco.ios.ios_config:
+        lines:
+          - logging count
+          - logging snmp-authfail
+          - logging buffered 512000
+          - no logging console
+
+    - name: IOS primary NTP server config
+      cisco.ios.ios_config:
+        lines:
+          - ntp server {{ ntp_primary }} prefer
+
+    - name: IOS secondary NTP server config
+      cisco.ios.ios_config:
+        lines:
+          - ntp server {{ ntp_secondary }}
+
+    - name: IOS timezone config
+      cisco.ios.ios_config:
+        lines:
+          - clock time zone {{ timezone_offset }}
+          - clock summer-time {{ timezone }} recurring
+...

@@ -1,0 +1,34 @@
+# Ansible Playbook to prompt user for username / password and
+# uses the credentials input by the user to connect to the device
+# then runs a show ip route on the devices
+
+---
+- name: Test prompt
+  hosts: OP-SW-01
+  gather_facts: false
+  connection: network_cli
+  vars_prompt:
+    - name: "username1"
+      prompt: "Enter your username"
+      private: false
+    - name: "password1"
+      prompt: Enter you password
+      private: true
+# Above vars_prompt section is going to prompt the user to enter their credentials. Note
+# private is set to yes for password so won't display on the screen
+
+  vars:
+    ansible_user: "{{ username1 }}"
+    ansible_password: "{{ password1 }}"
+# vars is using then using the username / password entered by the user to connect to the host(s)
+
+  tasks:
+    - name: Show IP route on devices
+      cisco.ios.ios_command:
+        commands: Show ip route
+      register: print_output
+
+    - name: Output the playbook output to screen
+      ansible.builtin.debug:
+        var: print_output.stdout_lines
+...

@@ -1,0 +1,26 @@
+# Ansible Playbook to add priviledge users to devices
+---
+- name: Add users to Cisco hosts
+  hosts: lab-sw1
+  gather_facts: false
+  vars:
+    names:
+      - user1
+      - user2
+
+  tasks:
+    - name: Adding the users
+      cisco.ios.ios_user:
+        name: "{{ item }}"
+        state: present
+        privilege: 15
+        password_type: secret
+        update_password: on_create
+      no_log: true
+      with_items: "{{ names }}"
+      notify: save
+
+    - name: Save the config when modified
+      cisco.ios.ios_config:
+        save_when: modified
+...

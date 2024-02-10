@@ -1,0 +1,32 @@
+# Ansible Playbook to add AAA Authentication to cisco IOS devices
+---
+- name: Adding AAA authentication to hosts
+  hosts: cisco_ios
+  gather_facts: false
+
+  vars:
+    aaa_configs:
+      - aaa new-model
+      - aaa authentication login default group tacacs+ local
+      - aaa authentication enable default group tacacs+ enable
+      - aaa authorization config-commands
+      - 'aaa authorization exec default group tacacs+ local'
+      - 'aaa authorization commands 1 default group tacacs+ none'
+      - 'aaa authorization commands 15 default group tacacs+ none'
+      - aaa accounting exec default start-stop group tacacs+
+      - aaa accounting network default start-stop group tacacs+
+      - aaa accounting connection default start-stop group tacacs+
+      - aaa accounting system default start-stop group tacacs+
+      - aaa session-id common
+
+  tasks:
+    - name: Get the current aaa configs
+      cisco.ios.ios_command:
+        commands:
+          - "show running-config full | include aaa"
+      register: get_config
+
+    - name: Output the playbook output to screen
+      ansible.builtin.debug:
+        var: get_config.stdout_lines
+...

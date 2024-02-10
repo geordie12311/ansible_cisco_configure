@@ -1,0 +1,38 @@
+# Ansible Playbook to prompt user for username / password and
+# uses the credentials input by the user to connect to the device
+# and gathers subset of facts for each host
+---
+- name: Test user prompt for credentials
+  hosts: OP-SW-01
+  gather_facts: false
+  connection: network_cli
+  vars_prompt:
+    - name: "username1"
+      prompt: "Enter your username"
+    - name: "password1"
+      prompt: "Enter you password"
+      private: true
+# Above vars_prompt section is going to prompt the user to enter their credentials
+
+  vars:
+    ansible_user: "{{ username1 }}"
+    ansible_password: "{{ password1 }}"
+# vars is using then using the username / password entered by the user to connect to the host(s)
+
+  tasks:
+    - name: Gather device facts
+      cisco.ios.ios_facts:
+        gather_subset: all
+
+    - name: Display version
+      ansible.builtin.debug:
+        msg: "the IOS version is: {{ ansible_net_version }}"
+
+    - name: Display serial number
+      ansible.builtin.debug:
+        msg: "The serial number is: {{ ansible_net_serialnum }}"
+
+    - name: Display device Interfaces
+      ansible.builtin.debug:
+        msg: "the device IPv4 configured addresses are: {{ ansible_net_all_ipv4_addresses }}"
+...
