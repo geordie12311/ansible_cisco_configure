@@ -1,7 +1,7 @@
 # Ansible playbook to add IP Helper address to multiple interfaces on cisco devices
 ---
 - name: Add IP Helper Address to mulitple interfaces / hosts
-  hosts: ios_switches
+  hosts: lab-sw1
   connection: network_cli
 
   tasks:
