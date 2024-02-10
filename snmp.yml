@@ -1,7 +1,7 @@
 # Ansible playbook to add basic SNMP server configuraiton to cisco IOS devices
 ---
 - name: Add basic SNMP Server config
-  hosts: all
+  hosts: lab-sw1
   gather_facts: false
   connection: network_cli
 
